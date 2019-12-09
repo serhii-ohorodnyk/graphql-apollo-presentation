@@ -1,0 +1,217 @@
+import {Image, Appear, Notes} from 'mdx-deck'
+import { CodeSurfer, CodeSurferColumns, Step } from 'code-surfer'
+import { vsDark } from '@code-surfer/themes'
+
+import Multiline from './components/Multiline'
+import Center from './components/Center'
+import References from './components/References'
+
+import react_redux from './images/react_redux.png'
+import react_apollo from './images/react_apollo.webp'
+import apollo_vs_redux from './images/Apollo-vs-redux.jpg'
+
+export const theme = vsDark;
+
+# State management
+## with Apollo & GraphQL
+
+<Notes>blah blah</Notes>
+
+---
+
+<div style={{ display: "flex", flexDirection: "row", alignItems: 'center', justifyContent: 'center' }}>
+  <img style={{ objectFit: 'contain', width: '30%' }} src={react_redux} />
+  <span style={{ fontSize: '20rem', fontWeight: 'bold', margin: '0 50px' }}>&rarr;</span>
+  <img
+    style={{ objectFit: 'contain', width: '30%' }}
+    src={react_apollo}
+  />
+</div>
+<div style={{ display: "flex", flexDirection: "row", alignItems: 'center', justifyContent: 'space-around', width: "100%" }}>
+  <div>React + Redux</div>
+  <div>Apollo + React</div>
+</div>
+
+---
+
+# Motivation
+
+<Appear>
+  <h3>Redux is great but...</h3>
+  <h3>
+    <div>most of the applications need a caching layer</div>
+    <div>and <span style={{ textDecoration: 'underline' }}>not</span> a global state management</div>
+  </h3>
+</Appear>
+
+---
+
+<h1></h1>
+<Multiline
+  Elem="h3"
+  margin={50}
+  lines={['🤔', 'But redux can work like caching layer!', 'Using async actions']}
+/>
+
+---
+
+<h3>
+  To understand the problem lets take a look at an example
+</h3>
+
+--- 
+
+<CodeSurfer>
+
+```jsx subtitle="Maker list page component"
+const mapStateToProps = ({ makerState: makers }: AppState): MakerListPageStateProps => ({
+  isLoaded: makers.isLoaded,
+  isLoading: makers.isLoading,
+  error: makers.error,
+  makers: makers.data,
+});
+
+const mapDispatchToProps = (dispatch: Dispatch): MakerListPageDispatchProps => ({
+  loadMakers: (params: LoadMakersRequestParams) =>
+    dispatch(GetMakerListAction.create(AsyncActionStatus.Requested, params)),
+});
+
+const MakerListPageComponent = (props: MakerListPageProps & RouteComponentProps) => {
+  const { isValidToken } = useAuthentication();
+  const countryCode = useSelector(getCurrentCountryCode);
+  // Load all makers
+  React.useEffect(() => {
+    if (isValidToken) {
+      // if user is logged-in, makers will be loaded automatically
+      // using RetailerContext
+      return;
+    }
+
+    if (!props.isLoading && !props.isLoaded && !!countryCode) {
+      return props.loadMakers({
+        countryCode,
+        skip: 0,
+        limit: Number.MAX_SAFE_INTEGER,
+      });
+    }
+  }, [props.location, props.isLoading, props.isLoaded, countryCode]);
+
+  return (
+      <MakerListPage
+        {...props}
+        makers={getMakersToDisplay()}
+      />
+  );
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(MakerListPageComponent);
+```
+
+```diff 2[12:27],3[12:29],4[10:27],5[11:22],9,10 subtitle="Conencting to redux store"
+```
+
+```diff 17:31 subtitle="Refetch data based on dependencies"
+```
+
+```diff 24[29:43] subtitle="Use cached data if it is loaded already"
+```
+
+```diff 31 subtitle="Retrigger funciton if dependencies change"
+```
+
+</CodeSurfer>
+
+---
+
+## Seems simple. Right?
+<Appear>
+  <h2>Except it's not all...</h2>
+</Appear>
+
+---
+
+<Center>
+  <h2>What if dependency value changes outside of MakerListPage?</h2>
+  <Appear>
+    <h3>- We refetch list data after dependency changes (we have thunk)</h3>
+  </Appear>
+</Center>
+
+---
+
+## TBD: Diagramm with dependencies
+
+---
+
+<Center>
+  <h3>Code becames difficult to reason about</h3>
+  <ul>
+    <Appear>
+      <li>actions (or context) starts to fetch data that they don't know about</li>
+      <li>it becomes easy to overfetch data or get stale data</li>
+      <li>difficult to refactor and decouple code</li>
+    </Appear>
+</ul>
+</Center>
+
+<Notes>That is why we actually reload complete page when we logout instead of cleaning the state</Notes>
+
+---
+
+<Center>
+  <h3>It happens because we are not fetching data in a reactive way (declarative)</h3>
+</Center>
+
+---
+
+<Center>
+  <h3>It can be declarative with redux</h3>
+  <ul>
+    <Appear>
+      <li>Save data in redux store with request parameters as a key</li>
+      <li>Use smart selectors (hooks) to get data from store based on request parameters or trigger the request action</li>
+      <li>Normalize the data (dictionary of items separate, array of item Ids separate)</li>
+    </Appear>
+  </ul>
+  
+</Center>
+
+---
+
+## With apollo we get this caching for free
+### It is a graphql client with smart cache
+### not a storage
+
+---
+
+<img src={apollo_vs_redux} style={{ height: '100%'}} />
+
+---
+
+## Graphql core definitions
+
+<Center>
+  <ul>
+    <Appear>
+      <li>GraphQL - a query language for your API</li>
+      <li>Schema - description of available objects and its fields</li>
+      <li>Resolver - function that describes how to resolve field of an object in a Schema</li>
+      <li>Operation(query or mutation) - request of specific fields on objects</li>
+    </Appear>
+  </ul>
+</Center>
+
+---
+
+## TBD: Example with graphql
+
+---
+
+## References
+
+<References />
+
+---

@@ -1,0 +1,19 @@
+{
+  "name": "graphql-apollo-presentation",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "mdx-deck deck.mdx",
+    "build": "mdx-deck build deck.mdx"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "code-surfer": "3.0.0-beta.1",
+    "mdx-deck": "3.0.13"
+  },
+  "dependencies": {
+    "styled-components": "^4.4.1"
+  }
+}
