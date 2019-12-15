@@ -9,13 +9,21 @@ import References from './components/References'
 import react_redux from './images/react_redux.png'
 import react_apollo from './images/react_apollo.webp'
 import apollo_vs_redux from './images/Apollo-vs-redux.jpg'
+import deps1 from './images/Dependencies-view_1.jpg'
+import deps2 from './images/Dependencies-view_2.jpg'
+import deps3 from './images/Dependencies-view_3.jpg'
+import deps4 from './images/Dependencies-view_4.jpg'
+import deps5 from './images/Dependencies-view_5.jpg'
+import deps6 from './images/Dependencies-view_6.jpg'
+import deps7 from './images/Dependencies-view_7.jpg'
+import schema_resolver from './images/schema_resolver.png'
+import query from './images/query.png'
+import move_to_server from './images/move_to_server.png'
 
 export const theme = vsDark;
 
 # State management
 ## with Apollo & GraphQL
-
-<Notes>blah blah</Notes>
 
 ---
 
@@ -55,9 +63,9 @@ export const theme = vsDark;
 
 ---
 
-<h3>
-  To understand the problem lets take a look at an example
-</h3>
+🧐
+### To understand the problem
+### lets take a look at an example
 
 --- 
 
@@ -119,7 +127,7 @@ export default connect(
 ```diff 24[29:43] subtitle="Use cached data if it is loaded already"
 ```
 
-```diff 31 subtitle="Retrigger funciton if dependencies change"
+```diff 31 subtitle="Retrigger function if dependencies change"
 ```
 
 </CodeSurfer>
@@ -136,13 +144,57 @@ export default connect(
 <Center>
   <h2>What if dependency value changes outside of MakerListPage?</h2>
   <Appear>
-    <h3>- We refetch list data after dependency changes (we have thunk)</h3>
+    <h3>- We refetch list data after dependency changes (in a thunk actions)</h3>
+    <h3>- Or create global context provider that keeps track of dependencies</h3>
   </Appear>
 </Center>
 
 ---
 
-## TBD: Diagramm with dependencies
+## Diagramm with dependencies
+
+---
+
+<p style={{ margin: '10px' }} >Maker list depends on user preference (country code)</p>
+<img src={deps1} style={{ height: '80%'}} />
+
+---
+
+<p style={{ margin: '10px' }} >User preferences depends on geo location and retailer</p>
+<img src={deps2} style={{ height: '80%'}} />
+
+---
+
+<p style={{ margin: '10px' }} >Maker list also depends on subdomain</p>
+<img src={deps3} style={{ height: '80%'}} />
+
+---
+
+<p style={{ margin: '10px' }} >Checkout state depends on retailer</p>
+<img src={deps4} style={{ height: '80%'}} />
+
+---
+
+<p style={{ margin: '10px' }} >But retailer also depends on checkout state</p>
+<img src={deps5} style={{ height: '80%'}} />
+
+---
+
+<p style={{ margin: '10px' }} >Retailer also depends on authentication state</p>
+<img src={deps6} style={{ height: '80%'}} />
+
+---
+
+<p style={{ margin: '10px' }} >... and maker list depends on authentication state <img style={{ height: '50px' }} src="https://www.meme-arsenal.com/memes/9842c3db6d1639e09dbe3d55466d76fe.jpg" /></p>
+<img src={deps7} style={{ height: '80%'}} />
+
+---
+
+### As a result we are fetching maker in following places
+- makers list page
+- authentication dialog
+- product list page
+- retailer global context provider
 
 ---
 
@@ -162,13 +214,7 @@ export default connect(
 ---
 
 <Center>
-  <h3>It happens because we are not fetching data in a reactive way (declarative)</h3>
-</Center>
-
----
-
-<Center>
-  <h3>It can be declarative with redux</h3>
+  <h3>It all can be improved with redux</h3>
   <ul>
     <Appear>
       <li>Save data in redux store with request parameters as a key</li>
@@ -206,12 +252,212 @@ export default connect(
 
 ---
 
-## TBD: Example with graphql
+### Code time 🙂
+
+---
+
+<CodeSurfer>
+
+```graphql subtitle="Graphql schema"
+type Maker {
+  _id: ID!
+  createdAt: Int!
+  updatedAt: Int!
+  subDomain: String!
+  name: String!
+  description: MapObj
+  summary: MapObj
+  generalCategories: [String!]!
+  subCategories: [String!]!
+  productCategories: [ProductCategory!]!
+  # Rest of the fields
+}
+
+type ProductCategory {
+  # Field definitions here
+}
+
+type Query {
+  dummyQuery(dummyParameter: String!): Boolean!
+
+  allMakers(
+    skip: Int!,
+    limit: Int!,
+    makerIds: [String!],
+    countryCode: CountryCode!,
+    subDomain: String
+  ): [Maker!]!
+}
+
+type Mutation {
+  dummyMutation(dummyParameter: Int!): Boolean!
+}
+```
+
+```diff 1:17 subtitle="Maker type"
+```
+
+```diff 19:29 subtitle="Root Query"
+```
+
+```diff 21:28 subtitle="All makers query"
+```
+
+```diff 31:33 subtitle="Root Mutation"
+```
+
+</CodeSurfer>
+
+---
+
+<CodeSurfer>
+
+```ts subtitle="All makers resolver"
+const mapApiMaker = (apiMaker: ApiMaker): Maker => ({
+  __typename: 'Maker',
+  _id: apiMaker._id,
+  listImage: mapApiImage(apiMaker.listImage),
+  name: apiMaker.name,
+  description: apiMaker.description,
+  defaultLanguage: apiMaker.defaultLanguage,
+  minOrderValue: {
+    __typename: 'MinOrderValue',
+    initial: apiMaker.minOrderValue.initial,
+    retention: apiMaker.minOrderValue.retention,
+  },
+  generalCategories: apiMaker.generalCategories,
+  subCategories: apiMaker.subCategories,
+  detailImage: mapApiImage(apiMaker.detailImage),
+  activatedAt: apiMaker.activatedAt,
+} as Maker);
+
+export const allMakers: QueryResolvers['allMakers'] = async (
+  _root,
+  variables
+) => {
+  return MakerService.getAllMakers(variables as GetMakerListParams).then(
+    response => (response.data || []).map(mapApiMaker)
+  );
+};
+```
+
+```diff 19:26 subtitle="Resolver function"
+```
+
+```diff 1:17 subtitle="Map data to graphql"
+```
+
+```diff 2,9 subtitle="__typename is important"
+```
+
+</CodeSurfer>
+
+---
+
+<img src={schema_resolver} style={{ height: '100%'}} />
+
+---
+
+<CodeSurfer>
+
+```graphql
+query allMakersPage(
+  $skip: Int!,
+  $limit: Int!,
+  $makerIds: [String!],
+  $countryCode: CountryCode!,
+  $subDomain: String
+) {
+  allMakers(
+    skip: $skip,
+    limit: $limit,
+    makerIds: $makerIds,
+    countryCode: $countryCode,
+    subDomain: $subDomain
+  ) {
+    _id
+    name
+    description
+  }
+}
+```
+
+```diff 1:7 subtitle="Define function params"
+```
+
+```diff 8:14 subtitle="Call schema query"
+```
+
+```diff 15:18 subtitle="Define what you need from that query result"
+```
+
+</CodeSurfer>
+
+---
+
+<img src={query} style={{ height: '100%'}} />
+
+---
+
+<CodeSurfer>
+
+```jsx subtitle="Use query hook in the component"
+const MakerListPageComponent = (props: MakerListPageProps & RouteComponentProps) => {
+  const countryCode = useSelector(getCurrentCountryCode);
+  // Load all makers
+  const { data, loading, error } = useAllMakersPageQuery({
+    skip: !countryCode,
+    variables: {
+      countryCode: countryCode as CountryCode,
+      makerIds: null,
+      skip: 0,
+      limit: 1000,
+      subDomain: subdomain,
+    },
+  });
+
+  return (
+      <MakerListPage
+        {...props}
+        makers={data.allMakers}
+      />
+  );
+};
+```
+
+```diff 4:13"
+```
+
+</CodeSurfer>
+
+---
+
+### Small demo
+
+---
+
+<img src={move_to_server} style={{ height: '100%'}} />
+
+---
+
+### Graphql advantages
+
+- good caching mechanism with Apollo
+- code is easy to reason about
+- type safety shared between backend and client
+- less code to write
+- no need to have populate query strings
+- optimistic rendering
+
+---
+
+### Graphql DISadvantages
+
+- Learning curve (it's not big but still)
+- No generic types
 
 ---
 
 ## References
 
 <References />
-
----
