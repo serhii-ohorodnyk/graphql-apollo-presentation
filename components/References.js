@@ -52,6 +52,16 @@ const Referenes = () => (
       title="Code generator docs"
     />
 
+    <Entry
+      link="https://medium.com/paypal-engineering/graphql-resolvers-best-practices-cd36fdbcef55"
+      title="Graphql best practices from PayPal"
+    />
+
+    <Entry
+      link="https://github.com/mercavus/Retailer-app/tree/apollo-state"
+      title="Branch with examples code"
+    />
+
   </Styled>
 )
 
