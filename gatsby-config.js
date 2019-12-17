@@ -1,3 +1,3 @@
 module.exports = {
-  pathPrefix: `/graphql-apollo-presentation`,
+  pathPrefix: `/build`,
 }
